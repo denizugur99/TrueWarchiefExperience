@@ -1,0 +1,11 @@
+## Interface: 120001
+## Interface-Retail: 120001
+## Title: |cffFF8000True|r |cffC41F3BWarchief|r |cffFF8000Experience|r
+## Notes: Warrior class voice pack — plays character voice lines on spells and events
+## Author: Deniz Ugur
+## Version: 1.0.0
+## SavedVariables: TWE_settings
+## IconAtlas: classicon-warrior
+## DefaultState: enabled
+
+TWE_main.lua

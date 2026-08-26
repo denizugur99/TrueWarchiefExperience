@@ -165,10 +165,9 @@ TWE_Sounds = {
         {"mount\\mount_1.ogg", 1}, {"mount\\mount_2.ogg", 1}, {"mount\\mount_3.ogg", 1},
         {"mount\\mount_4.ogg", 1}, {"mount\\mount_5.ogg", 1}, {"mount\\mount_6.ogg", 1},
     },
-    -- AFK: sound pack only ships one file (afkStart_1.mp3, ~166.8s) — treated as a
-    -- single-shot stinger/ambience per project instructions; there is no separate
-    -- looping music-bed category and no AFK_END file, so nothing plays on return
-    -- beyond stopping this handle. Played via a direct pcall, not through PlayRandom.
+    -- AFK: afkStart_1.mp3 (measured ~166.78s -- see AFK_STINGER_DURATION below)
+    -- plays on entering AFK, then loops itself for as long as the player stays
+    -- AFK. Played via direct pcall, not PlayRandom.
     AFK_START = { {"afkStart\\afkStart_1.mp3", 1} },
 
     -- Spell categories
@@ -346,8 +345,11 @@ local prevMounted    = false
 local prevAFK        = false
 local prevSelfTarget = false
 local afkSoundHandle = nil
+local afkMusicTimer  = nil -- shared: stinger->music AND every music->music reschedule
 local pollTimer      = 0
 local POLL           = 0.2
+
+local AFK_STINGER_DURATION = 166.98 -- afkStart_1.mp3 measured runtime (166.776s) + buffer
 
 local function IsStillAFK()
     local ok, isAFK = pcall(function()
@@ -356,9 +358,10 @@ local function IsStillAFK()
     return ok and isAFK
 end
 
--- AFK: single-shot stinger/ambience (see AFK_START note above the Sounds table).
--- Played directly, not through PlayRandom, and not force -- it never needs to
--- cut anything, and normal/force sounds are still free to play over it.
+-- AFK: plays afkStart_1.mp3 (direct pcall, not through PlayRandom -- it never
+-- needs to cut anything, and normal/force sounds are still free to play over
+-- it), then reschedules itself using AFK_STINGER_DURATION for as long as the
+-- player is still AFK.
 local function PlayAFKStart()
     if not TWE_soundEnabled then return end
     local pool = TWE_Sounds.AFK_START
@@ -367,6 +370,13 @@ local function PlayAFKStart()
     local ok, success, handle = pcall(PlaySoundFile, ADDON_PATH .. chosen, "Dialog")
     afkSoundHandle = (ok and success) and handle or nil
     TWE_Debug("AFK start playing: " .. chosen)
+
+    afkMusicTimer = C_Timer.NewTimer(AFK_STINGER_DURATION, function()
+        afkMusicTimer = nil
+        if IsStillAFK() then
+            PlayAFKStart()
+        end
+    end)
 end
 
 local frame = CreateFrame("Frame")
@@ -454,11 +464,14 @@ frame:SetScript("OnUpdate", function(_, elapsed)
         PlayAFKStart()
     elseif okAFK and afkEvent == "AFKEND" then
         TWE_Debug("state: AFK END")
+        if afkMusicTimer then
+            afkMusicTimer:Cancel()
+            afkMusicTimer = nil
+        end
         if afkSoundHandle then
             pcall(StopSound, afkSoundHandle, 0)
             afkSoundHandle = nil
         end
-        -- No AFK_END sound file ships in this pack; nothing plays on return.
     end
 
     -- Self-target

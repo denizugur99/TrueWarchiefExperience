@@ -106,3 +106,12 @@ Ambient states (combat, mount, AFK, self-target, death/revive) are polled
 every 0.2s in an `OnUpdate` handler rather than driven by dedicated events,
 since some of those states (e.g. `UnitIsAFK`) require careful handling of
 Midnight's "secret value" restrictions.
+
+### AFK loop
+
+Going AFK plays `AFK_START` (`afkStart_1.mp3`), then keeps re-playing it on a
+timer (`AFK_STINGER_DURATION`, its own measured runtime) for as long as
+`UnitIsAFK("player")` stays true, using a single shared timer handle reused
+across every replay. Returning from AFK cancels that timer and stops whatever
+is currently playing with an explicit `0` fadeout — no separate return-from-AFK
+line.

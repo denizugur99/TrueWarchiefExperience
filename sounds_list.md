@@ -17,7 +17,7 @@ short).
 | `DEATH` | 2 | yes | 14.1s / 15.8s (measured, per file) | Cuts through everything, same tier as major cooldowns. |
 | `REVIVE` | 6 | yes | 4.6s–11.2s (measured, per file) | Cuts through everything. File name translated from Turkish `canlandirma` and camelCased to `revive`. |
 | `MOUNT` | 6 | no | n/a | Plays on mounting up; suppressed on login via `prevMounted` seeded from `IsMounted()` on `PLAYER_ENTERING_WORLD`. |
-| `AFK_START` | 1 (`.mp3`, ~166.8s) | n/a — played via direct `pcall(PlaySoundFile, ...)`, not through `PlayRandom` | — | Single-shot stinger/ambience. The pack ships only one AFK file and no separate looping music bed and no AFK-end file, so on AFK end the addon simply stops this handle (`StopSound` with explicit `0` fadeout) — nothing plays on return. |
+| `AFK_START` | 1 (`.mp3`) | n/a — played via direct `pcall(PlaySoundFile, ...)`, not through `PlayRandom` | 166.98s (measured, `AFK_STINGER_DURATION` constant) | Plays immediately on going AFK, then reschedules itself via a shared `C_Timer` handle (`afkMusicTimer`) every `AFK_STINGER_DURATION`, re-checking `UnitIsAFK` via `IsStillAFK()` before each replay, for as long as the player stays AFK. On AFK end the addon cancels the shared timer and stops `afkSoundHandle` with an explicit `0` fadeout — no return-from-AFK voice line. |
 
 ## Spell categories
 
